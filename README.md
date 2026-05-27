@@ -69,14 +69,20 @@ Die Verbindung zum Titan Quad erfolgt über **CAN-Bus**. Dabei müssen die Kabel
 | USB-A 2.0 (1 & 2) | Einfache Geräte (Tastatur etc.) |
 | Ethernet (5) | Netzwerkanbindung / SSH |
 
+<img width="638" height="243" alt="image" src="https://github.com/user-attachments/assets/dc1cc331-94a7-49dd-b56f-d4ecc5b1679d" />
+
 > [!NOTE]
 > Das direkte Einbinden des Roboters in das Schulnetzwerk ist **nicht empfohlen**, da der Pi dann als Ubuntu-Server im Netzwerk auftritt und dieses belasten würde. Besser: eigener Router oder Laptop als Gateway (siehe [2.2](#22-ros2-robot-operating-system)).
 
 Der Lüfter lässt sich durch Aus- bzw. Einstecken eines bestimmten Kabels am VMX ein- und ausschalten. Beim Auseinandernehmen des VMX auf die **Reihenfolge der Teile von oben nach unten** achten.
 
+<img width="274" height="366" alt="image" src="https://github.com/user-attachments/assets/000285fa-0494-4933-85bc-3403716aaebe" />
+<img width="280" height="374" alt="image" src="https://github.com/user-attachments/assets/a2c77f6c-2d3c-4f4f-a289-c4afa567aa35" />
+
 ---
 
 ### 1.2 Titan Quad (Motor Controller)
+<img width="576" height="432" alt="image" src="https://github.com/user-attachments/assets/eb2cc13f-f4cb-4097-9870-35dfb63592f2" />
 
 Der **Titan Quad** ist der Motor Controller des Roboters. Er:
 
@@ -89,6 +95,7 @@ Der **Titan Quad** ist der Motor Controller des Roboters. Er:
 ---
 
 ### 1.3 Servo Block
+<img width="4032" height="3024" alt="image" src="https://github.com/user-attachments/assets/09d6261b-6463-4540-bc24-95981d1ed160" />
 
 Der **Servo Power Block** versorgt die Servo-Motoren mit Strom (12V vom Titan Quad) und steuert diese.
 
@@ -104,6 +111,7 @@ Die Servos werden mit dem **schwarzen Kabel nach oben** in den Servo Block geste
 
 - **Output-Seite:** Servos einstecken (3-Pin-Connector)
 - **Input-Seite:** 3-Pin-Kabel zum VMX-Pi in einen der Channels **12–21**
+<img width="576" height="432" alt="image" src="https://github.com/user-attachments/assets/929796ef-133b-4bd7-812e-3f67cfa44864" />
 
 > [!CAUTION]
 > Servos **nicht direkt in den VMX** stecken! Die höhere Spannung kann die Servos beschädigen. Immer den Servo Block als Zwischenstufe nutzen.
@@ -111,6 +119,7 @@ Die Servos werden mit dem **schwarzen Kabel nach oben** in den Servo Block geste
 ---
 
 ### 1.4 Maverick Motor
+<img width="3024" height="3189" alt="image" src="https://github.com/user-attachments/assets/9b03c449-3dfd-429d-a61d-4332c7207774" />
 
 Der Roboter nutzt bis zu **vier Maverick-Motoren** zum Antrieb der Räder.
 
@@ -129,13 +138,17 @@ Farbzuordnung der Encoder-Kabel:
 | A | Blau |
 | – (GND) | Schwarz |
 | B | Gelb |
+<img width="400" height="300" alt="image" src="https://github.com/user-attachments/assets/299d9087-05f3-47e0-b859-c348ef4b35e1" />
 
 > [!TIP]
 > Bei **Falschpolung** dreht sich der Motor einfach nicht – kein Schaden entsteht. Die Abbildung auf dem Titan Quad hilft bei der korrekten Zuordnung.
 
+<img width="234" height="313" alt="image" src="https://github.com/user-attachments/assets/228c9bac-c51d-4ee5-9ac5-9908735ef657" />
+
 ---
 
 ### 1.5 Servo Motor
+<img width="3024" height="4032" alt="image" src="https://github.com/user-attachments/assets/ef22dacb-ad39-4168-80b6-9e7fbdc27ba5" />
 
 Im Set sind **sechs Servos** enthalten: **3× Torque** und **3× Fast**.
 
@@ -344,16 +357,24 @@ Anschließend im Browser öffnen:
 
 **Kommunikationsdiagramm:**
 
-```
-[Browser / Gerät im Netzwerk]
-         │ HTTP
-         ▼
-  [Flask-Server (Laptop)]
-         │ ROS2 (über Netzwerk)
-         ▼
-   [Roboter (Pi/VMX)]
-    ├── /cmd_vel  (Fahren)
-    └── /servo*/angle_cmd  (Servos)
+# System Architecture
+
+```mermaid
+flowchart TD
+    Handy["**Handy**\nHTTP Request"]
+    Router["**Router**\nUDP/TCP Network"]
+    Laptop["**Laptop**\nFlask Server"]
+    VMX["**VMX**\nROS2 Bridge"]
+    TitanQuad["**Titan Quad**\nCAN Controller"]
+    Maverick["**Maverick**\nMotoren"]
+    Servos["**Servos**\nPWM Steuerung"]
+
+    Handy -->|über Netzwerk| Router
+    Router -->|über Netzwerk| Laptop
+    Laptop -->|ROS2-Befehle| VMX
+    VMX -->|CAN Bus| TitanQuad
+    TitanQuad -->|Motor| Maverick
+    VMX -->|PWM-Signale| Servos
 ```
 
 ---
@@ -362,7 +383,10 @@ Anschließend im Browser öffnen:
 
 Um alle nötigen Knoten mit einem einzigen Befehl zu starten, wurde ein Shell-Skript erstellt, das mehrere Terminals und Nodes gleichzeitig verwaltet.
 
-**Skript herunterladen:** [launch.sh (Google Drive)](https://drive.google.com/file/d/1Jf-hygKvxXdPH_gN107uBteLvEhr0gB_/view?usp=sharing)
+**Skript herunterladen:**
+```bash
+curl -fsSL -o lanch.sh https://raw.githubusercontent.com/DBG-Robots/Studica_Robot/main/lanch.sh
+```
 
 **Einrichten (auf dem Pi):**
 
